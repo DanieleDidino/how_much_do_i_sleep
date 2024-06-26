@@ -238,7 +238,13 @@ if __name__ == "__main__":
     feeding_combine_grouped = group_feeding(feeding_combined)
     
     # Save data frame into csv files
-    my_sleep_df.to_csv(Path("csv_files", "my_sleep_df.csv"), index=False)
-    my_sleep_grouped.to_csv(Path("csv_files", "my_sleep_grouped.csv"), index=False)
-    his_sleep_grouped_filtered.to_csv(Path("csv_files", "his_sleep_grouped_filtered.csv"), index=False)
-    feeding_combine_grouped.to_csv(Path("csv_files", "feeding_df_combine_grouped.csv"), index=False)
+    my_sleep_df.to_csv(Path("csv_xlsx_files", "my_sleep_df.csv"), index=False)
+    my_sleep_grouped.to_csv(Path("csv_xlsx_files", "my_sleep_grouped.csv"), index=False)
+    his_sleep_grouped_filtered.to_csv(Path("csv_xlsx_files", "his_sleep_grouped_filtered.csv"), index=False)
+    feeding_combine_grouped.to_csv(Path("csv_xlsx_files", "feeding_df_combine_grouped.csv"), index=False)
+    
+    # Save data frame into excel files
+    my_sleep_df.astype(str).to_excel(Path("csv_xlsx_files", "my_sleep_df.xlsx"), index=False)
+    my_sleep_grouped.astype(str).to_excel(Path("csv_xlsx_files", "my_sleep_grouped.xlsx"), index=False)
+    his_sleep_grouped_filtered.astype(str).to_excel(Path("csv_xlsx_files", "his_sleep_grouped_filtered.xlsx"), index=False)
+    feeding_combine_grouped.astype(str).to_excel(Path("csv_xlsx_files", "feeding_df_combine_grouped.xlsx"), index=False)

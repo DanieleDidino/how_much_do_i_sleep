@@ -2,11 +2,10 @@ import zipfile
 import json
 from pathlib import Path
 import pandas as pd
-import matplotlib.pyplot as plt
 from dateutil.relativedelta import relativedelta
 
 # Set the baby birth date
-BIRTHDATE = pd.to_datetime("2024-03-30 23:30:00.000000+02:00")
+BIRTHDATE = pd.to_datetime("2024-03-30")
 
 # Exclude data before the 6th of May for the baby sleping data
 FIRST_DAY_SLEEP_DATA = pd.to_datetime("2024-05-06T00:00:00.000+02:00")
@@ -79,9 +78,6 @@ def preprocess_sleep(data: list[dict], birthdate:pd.Timestamp, child:bool) -> pd
     df["night_weekday"] = df["night_datetime"].dt.dayofweek + 1 # add 1 because: Monday=0, Sunday=6
     df["night_weekday_name"] = df["night_datetime"].dt.day_name()
 
-    # Add months and days passed
-    df[["months_passed", "days_passed"]] = [calculate_months_days(days, birthdate) for days in df["night_datetime"]]
-
     # Select relevant columns
     columns_to_keep = [
         "duration_seconds", "duration_minutes", "duration_hours", "endDate", "startDate",
@@ -89,8 +85,7 @@ def preprocess_sleep(data: list[dict], birthdate:pd.Timestamp, child:bool) -> pd
         "start_minute", "start_time", "start_weekday", "start_weekday_name",
         "end_datetime", "end_day", "end_month", "end_year", "end_hour",
         "end_minute", "end_time", "end_weekday", "end_weekday_name",
-        "night_datetime", "night", "night_day", "night_month", "night_year", "night_weekday", "night_weekday_name",
-        "months_passed", "days_passed"
+        "night_datetime", "night", "night_day", "night_month", "night_year", "night_weekday", "night_weekday_name"
         ]
     
     return df[columns_to_keep]
@@ -101,20 +96,20 @@ def group_sleep(data: pd.DataFrame) -> pd.DataFrame:
         data
         .groupby("night")
         .agg({
-            "duration_seconds":"sum",
             "duration_minutes":"sum",
             "duration_hours":"sum",
-            "night_datetime":"first",
             "night_day":"first",
             "night_month":"first",
             "night_year":"first",
             "night_weekday":"first",
             "night_weekday_name":"first",
-            "months_passed":"first",
-            "days_passed":"first"
         })
         .reset_index()
     )
+
+    # Add months and days passed
+    sleep_grouped[["months_passed", "days_passed"]] = [calculate_months_days(pd.to_datetime(days), BIRTHDATE) for days in sleep_grouped["night"]]
+    
     return sleep_grouped
 
 
@@ -150,11 +145,15 @@ def preprocess_feeding(data: list[dict], birthdate:pd.Timestamp) -> pd.DataFrame
     df["end_weekday"] = df["end_datetime"].dt.dayofweek + 1 # add 1 because: Monday=0, Sunday=6
     df["end_weekday_name"] = df["end_datetime"].dt.day_name()
 
-    # day
-    df["day"] = df["start_datetime"].dt.date
-
-    # Add months and days passed
-    df[["months_passed", "days_passed"]] = [calculate_months_days(days, birthdate) for days in df["start_datetime"]]
+    # In the database with the sleeping session
+    # we use the night to encode the date
+    df["night_datetime"] = df["start_datetime"]
+    df["night"] = df["night_datetime"].dt.date
+    df["night_day"] = df["night_datetime"].dt.day
+    df["night_month"] = df["night_datetime"].dt.month
+    df["night_year"] = df["night_datetime"].dt.year
+    df["night_weekday"] = df["night_datetime"].dt.dayofweek + 1 # add 1 because: Monday=0, Sunday=6
+    df["night_weekday_name"] = df["night_datetime"].dt.day_name()
 
     # Select relevant columns
     columns_to_keep = [
@@ -165,7 +164,8 @@ def preprocess_feeding(data: list[dict], birthdate:pd.Timestamp) -> pd.DataFrame
         "start_minute", "start_time", "start_weekday", "start_weekday_name",
         "end_datetime", "end_day", "end_month", "end_year", "end_hour",
         "end_minute", "end_time", "end_weekday", "end_weekday_name",
-        "day", "months_passed", "days_passed"
+        "night_datetime",  "night", "night_day", "night_month",
+        "night_year", "night_weekday", "night_weekday_name"
         ]
     
     return df[columns_to_keep]
@@ -174,26 +174,26 @@ def preprocess_feeding(data: list[dict], birthdate:pd.Timestamp) -> pd.DataFrame
 def group_feeding(data: pd.DataFrame) -> pd.DataFrame:
     feeding_grouped = (
         data
-        .groupby("day")
-        .agg(
-            left_duration_seconds=pd.NamedAgg(column="left_duration_seconds", aggfunc="sum"),
-            left_duration_minutes=pd.NamedAgg(column="left_duration_minutes", aggfunc="sum"),
-            left_duration_hours=pd.NamedAgg(column="left_duration_hours", aggfunc="sum"),
-            right_duration_seconds=pd.NamedAgg(column="right_duration_seconds", aggfunc="sum"),
-            right_duration_minutes=pd.NamedAgg(column="right_duration_minutes", aggfunc="sum"),
-            right_duration_hours=pd.NamedAgg(column="right_duration_hours", aggfunc="sum"),
-            start_datetime=pd.NamedAgg(column="start_datetime", aggfunc="first"),
-            start_day=pd.NamedAgg(column="start_day", aggfunc="first"),
-            start_month=pd.NamedAgg(column="start_month", aggfunc="first"),
-            start_year=pd.NamedAgg(column="start_year", aggfunc="first"),
-            start_weekday=pd.NamedAgg(column="start_weekday", aggfunc="first"),
-            start_weekday_name=pd.NamedAgg(column="start_weekday_name", aggfunc="first"),
-            months_passed=pd.NamedAgg(column="months_passed", aggfunc="first"),
-            days_passed=pd.NamedAgg(column="days_passed", aggfunc="first"),
-            count=pd.NamedAgg(column="start_day", aggfunc="count"),
-        )
-        .reset_index()
+        .groupby("night")
+    .agg(
+        left_duration_minutes=pd.NamedAgg(column="left_duration_minutes", aggfunc="sum"),
+        left_duration_hours=pd.NamedAgg(column="left_duration_hours", aggfunc="sum"),
+        right_duration_minutes=pd.NamedAgg(column="right_duration_minutes", aggfunc="sum"),
+        right_duration_hours=pd.NamedAgg(column="right_duration_hours", aggfunc="sum"),
+        night_day=pd.NamedAgg(column="night_day", aggfunc="first"),
+        night_month=pd.NamedAgg(column="night_month", aggfunc="first"),
+        night_year=pd.NamedAgg(column="night_year", aggfunc="first"),
+        night_weekday=pd.NamedAgg(column="night_weekday", aggfunc="first"),
+        night_weekday_name=pd.NamedAgg(column="night_weekday_name", aggfunc="first"),
+        n_feeding_per_day=pd.NamedAgg(column="start_day", aggfunc="count"),
     )
+    .reset_index()
+    )
+
+    # Add months and days passed
+    feeding_grouped[["months_passed", "days_passed"]] = [calculate_months_days(pd.to_datetime(days), BIRTHDATE) for days in feeding_grouped["night"]]
+
+
     return feeding_grouped
 
 
@@ -234,11 +234,55 @@ if __name__ == "__main__":
         ignore_index=True
     )
 
-    # Group by day
+    # Group by night
     feeding_combine_grouped = group_feeding(feeding_combined)
-    
+
+    # Rename columns
+    my_sleep_grouped.rename(
+        columns={
+            "duration_minutes": "my_sleep_duration_minutes",
+            "duration_hours": "my_sleep_duration_hours",
+        },
+        inplace=True
+    )
+    his_sleep_grouped_filtered.rename(
+        columns={
+            "duration_minutes": "baby_sleep_duration_minutes",
+            "duration_hours": "baby_sleep_duration_hours",
+        },
+        inplace=True
+    )
+    feeding_combine_grouped.rename(
+        columns={
+            "left_duration_minutes": "feeding_left_duration_minutes",
+            "left_duration_hours": "feeding_left_duration_hours",
+            "right_duration_minutes": "feeding_right_duration_minutes",
+            "right_duration_hours": "feeding_right_duration_hours",
+        },
+        inplace=True
+    )
+
+    # Merge data frames
+    on_columns = [
+        "night", "night_day", "night_month", "night_year", "night_weekday",
+        "night_weekday_name", "months_passed", "days_passed"
+    ]
+    df_merged = pd.merge(
+        my_sleep_grouped,
+        his_sleep_grouped_filtered,
+        on=on_columns,
+        how='outer'
+    )
+    df_merged_2 = pd.merge(
+        df_merged,
+        feeding_combine_grouped,
+        on=on_columns,
+        how='outer'
+    )
+
     # Save data frame into csv files
-    my_sleep_df.to_csv(Path("csv_files", "my_sleep_df.csv"), index=False)
-    my_sleep_grouped.to_csv(Path("csv_files", "my_sleep_grouped.csv"), index=False)
-    his_sleep_grouped_filtered.to_csv(Path("csv_files", "his_sleep_grouped_filtered.csv"), index=False)
-    feeding_combine_grouped.to_csv(Path("csv_files", "feeding_df_combine_grouped.csv"), index=False)
+    # my_sleep_df.to_csv(Path("csv_files", "my_sleep_df.csv"), index=False)
+    # my_sleep_grouped.to_csv(Path("csv_files", "my_sleep_grouped.csv"), index=False)
+    # his_sleep_grouped_filtered.to_csv(Path("csv_files", "his_sleep_grouped_filtered.csv"), index=False)
+    # feeding_combine_grouped.to_csv(Path("csv_files", "feeding_df_combine_grouped.csv"), index=False)
+    df_merged_2.to_csv(Path("csv_files", "sleeping_feeding.csv"), index=False)

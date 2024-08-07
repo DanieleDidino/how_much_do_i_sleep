@@ -13,7 +13,7 @@ Click [here](https://public.tableau.com/app/profile/daniele.didino/viz/Howmuchdi
 
 I used this Dashboard to see how much I sleep every night since my newborn was born. I also added his sleeping and feeding patterns. The goal is to one day get back to sleeping 8 hours... I don't know how long it will take. Probably a couple of years. We'll see.
 
-## Dashboard Features (TO EDIT FROM HERE )
+## Dashboard Features
 
 The dashboard features four distinct graphs:
 
@@ -21,5 +21,3 @@ The dashboard features four distinct graphs:
 - **Number of Feedings per Day**: How many times my child feeds (plotted by side).
 - **Feeding Duration per Day**: How long the feedings last in hours per day.
 - **Baby's Sleeping Duration by Night**: How many hours my child sleeps every night.
-
-For more information, please visit my website [here](https://danieledidino.github.io/).

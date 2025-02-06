@@ -11,7 +11,7 @@ This repository contains data about how much I slept in the past months, as well
 
 Click [here](https://public.tableau.com/app/profile/daniele.didino/viz/HowmuchdidIsleepinthepastmonths/Dashboard12) or on the figure to start exploring the interactive dashboard!
 
-I used this Dashboard to see how much I sleep every night since my newborn was born. I also added his sleeping and feeding patterns. The goal is to one day get back to sleeping 8 hours... I don't know how long it will take. Probably a couple of years. We'll see.
+I used this Dashboard to see how much I sleep every night since my newborn was born. I also added his sleeping and feeding patterns. The goal is to one day get back to sleeping 8 hours!
 
 ## Dashboard Features
 
